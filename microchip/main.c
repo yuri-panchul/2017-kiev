@@ -54,9 +54,9 @@ void main1 (void)
     for (;;)
     {
         PORTB = ~ 0;
-        delay (100);
+        delay (1000);
         PORTB = 0;
-        delay (100);
+        delay (1000);
     }
 }
 
@@ -73,7 +73,7 @@ void main2 (void)
     {
         n = (n >> 1) | ((n & 1) << 7);
         PORTC = n << 2;
-        delay (100);
+        delay (1000);
     }
 }
 
@@ -100,7 +100,7 @@ void main3 (void)
 
         PORTC = (n | m) << 2;
         
-        delay (100);
+        delay (300);
     }
 }
 
@@ -109,9 +109,11 @@ void main3 (void)
 void main4 (void)
 {
     int n = 0;
-    
-    TRISBbits.RB13 = 1;  // Input button
-    TRISC          = 0;  // LEDs on breadboard
+
+    ANSELB = 0;  // Set all port B pins as digital, not analog
+
+    TRISBbits.TRISB13 = 1;  // Input button
+    TRISC             = 0;  // LEDs on breadboard
 
     for (;;)
     {
@@ -122,7 +124,7 @@ void main4 (void)
 
         PORTC = n << 2;
 
-        delay (50);
+        delay (500);
     }
 }
 
@@ -132,24 +134,24 @@ void main4 (void)
 #define PB_CLK_FREQUENCY   (20 * 1000 * 1000)
 #define SPI_CLK_FREQUENCY  ( 2 * 1000 * 1000)  // Requirement: from 1 to 4 MHz
 
-void main5 (void)
+void main (void)
 {
-    unsigned spi_value, light_level, output_value;
+    unsigned spi_value, light_level, shift, output_value;
 
     // Re-map SPI bits
     
-    RPC1R = 3;  // SDO1
     RPC0R = 3;  // SS1_bar
+    RPC1R = 3;  // SDO1
     SDI1R = 1;  // RPB5
 
-    // Set all GPIO RC bits as outputs
+    // Set GPIO RC bits 9:2 as outputs, 1:0 as inputs
 
-    TRISC = 0;
+    TRISC = 3;
 
     // Configure SPI
 
     SPI2CONbits.ON      = 0;        // Disable SPI to reset any previous state
-    value               = SPI2BUF;  // Clear receive buffer
+    spi_value           = SPI2BUF;  // Clear receive buffer
 
     SPI1CONbits.MSTEN   = 1;        // Master Mode Enable bit
     SPI1CONbits.MSSEN   = 1;        // Slave Select pin is driven automatically
@@ -166,14 +168,17 @@ void main5 (void)
     {
         SPI1BUF = 0;  // send data to slave
         
-        while (SPI1STATbits.SPIBUSY)  // wait until SPI transmission complete
+        while (SPI1STATbits.SPIBUSY)   // wait until SPI transmission complete
             ;
             
         spi_value = SPI1BUF;
         
-        light_level = spi_value >> 5;
+        light_level = spi_value >> 4;  // Eight bits of information
+                                       // with four trailing zeroes
         
-        output_value = ~ (~ 0 >> light_level);
+        shift = light_level >> 4;
+
+        output_value = ~ (0xff >> shift);
 
         PORTC = output_value << 2;
     }
