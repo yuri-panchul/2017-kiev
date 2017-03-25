@@ -64,7 +64,21 @@ module cmod_a7
             shift <= { button, shift [7:1] };
     end
 
-    assign pio [8:1] = shift [7:0];
+    wire [15:0] value;
+
+    pmod_als_spi_receiver pmod_als_spi_receiver_i
+    (
+        .clock    ( clock   ),
+        .reset_n  ( reset_n ),
+        .cs       ( ja [0]  ),
+        .sck      ( ja [3]  ),
+        .sdo      ( ja [2]  ),
+        .value    ( value   )
+    );
+
+    wire [7:0] level = ~ (~ 8'b0 >> value [12:9]);
+
+    assign pio [8:1] = shift | level;
 
     assign RGB0_Red   = ~ ((shift [7:4] != 4'b0) & board_led_strobe);
     assign RGB0_Green = ~ ((shift [5:2] != 4'b0) & board_led_strobe);
