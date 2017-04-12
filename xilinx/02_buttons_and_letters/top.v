@@ -10,52 +10,55 @@ module top
     inout  [48:1] pio          // GPIO, General-Purpose Input/Output
 );
 
-    wire clock   = CLK;
-    wire reset_n = ! BTN [0];
-    wire button  = pio [9];
+    // a b c d e f g  dp   Буквы с картинки
+    // 7 6 4 2 1 9 10 5    Выводы 7-сегментного индикатора
+    // 5 4 3 2 1 6 7       Выводы сигнала pio в ПЛИС
+    
+    //   --a--
+    //  |     |
+    //  f     b
+    //  |     |
+    //   --g--
+    //  |     |
+    //  e     c
+    //  |     |
+    //   --d-- 
 
-    wire shift_enable;
-    wire board_led_strobe;
 
-    timer timer_i
-    (
-        .clock_12_mhz                   ( clock            ),
-        .reset_n                        ( reset_n          ),
-        .strobe_with_period_0_35_second ( shift_enable     ),
-        .strobe_1_of_of_16              ( board_led_strobe )
-    );
+    // 1. Выводим одну букву Y. Присваиваем по битам.
 
-    reg [7:0] shift;
+    /*
+    assign pio [1] = 1'b0;  // e
+    assign pio [2] = 1'b1;  // d
+    assign pio [3] = 1'b1;  // c
+    assign pio [4] = 1'b1;  // b
+    assign pio [5] = 1'b0;  // a
+    assign pio [6] = 1'b1;  // f
+    assign pio [7] = 1'b1;  // g
+    */
+    
+    // 2. Выводим одну букву P. Присваиваем целым битовым вектором.
 
-    always @(posedge clock or negedge reset_n)
-    begin
-        if (! reset_n)
-            shift <= 8'b0;
-        else if (shift_enable)
-            shift <= { button, shift [7:1] };
-    end
+    /*
+    assign pio [7:1] = 7'b1111001;  // gfabcde
+    */
 
-    wire [15:0] value;
+    // 3. Выводим Y или P в зависимости от кнопки 0.
 
-    pmod_als_spi_receiver pmod_als_spi_receiver_i
-    (
-        .clock    ( clock   ),
-        .reset_n  ( reset_n ),
-        .cs       ( ja [0]  ),
-        .sck      ( ja [3]  ),
-        .sdo      ( ja [2]  ),
-        .value    ( value   )
-    );
+    `ifdef UNDEF    
+    assign pio [7:1] = BTN [0] ? 7'b1111001 /* P */ : 7'b1101110 /* Y */ ;
+    `endif
 
-    wire [7:0] level = ~ (~ 8'b0 >> value [12:9]);
+    // 4. Выводим Y или P в зависимости от кнопки 0. Кнопка 1 переворачивает букву
 
-    assign pio [8:1] = shift | level;
-
-    assign RGB0_Red   = ~ ((shift [7:4] != 4'b0) & board_led_strobe);
-    assign RGB0_Green = ~ ((shift [5:2] != 4'b0) & board_led_strobe);
-    assign RGB0_Blue  = ~ ((shift [3:0] != 4'b0) & board_led_strobe);
-
-    assign LED [0] = (ja != 8'b0) & board_led_strobe;
-    assign LED [1] = (pio [48:10] != 39'b0) & board_led_strobe;
+    assign pio [7:1]
+        = 
+        BTN [1] 
+            ? (BTN [0]
+                ? 7'b1001111 /* перевернутое P */
+                : 7'b1110101 /* перевернутое Y */ )
+            : (BTN [0]
+                ? 7'b1111001 /* P */
+                : 7'b1101110 /* Y */ );
 
 endmodule
