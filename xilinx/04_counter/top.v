@@ -13,17 +13,17 @@ module top
     wire clock   = CLK;
     wire reset_n = ! pio [8];
 
-    reg [25:0] counter;
+    reg [26:0] counter;
 
     always @(posedge clock or negedge reset_n)
     begin
         if (! reset_n)
-            counter <= 26'b0;
+            counter <= 27'b0;
         else
-            counter <= counter + 26'b1;
+            counter <= counter + 27'b1;
     end
     
-    wire [3:0] number = counter [25:22];
+    wire [3:0] number = counter [26:23];
 
     //   --a--
     //  |     |
@@ -57,8 +57,6 @@ module top
         4'hf: abcdefg = 7'b1000111;
         endcase
 
-    wire [6:0] gfabcde = { abcdefg [0], abcdefg [1], abcdefg [6:2] };
-
-    assign pio [7:1] = gfabcde;
+    assign pio [7:1] = abcdefg;
 
 endmodule
