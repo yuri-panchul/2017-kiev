@@ -1,29 +1,22 @@
 //----------------------------------------------------------------------------
 //
-//  Пример 4: Счетчик
+//  Упражнение 13: Сложение и вывод на 7-сегментный индикатор
 //
 //----------------------------------------------------------------------------
 
 module top
 (
-    input         CLK,  // Тактовый сигнал 12 MHz
     inout  [48:1] pio   // GPIO, General-Purpose Input/Output
 );
 
-    wire clock   = CLK;
-    wire reset_n = ! pio [8];
+    wire [3:0] a = pio [41:44];
+    wire [3:0] b = pio [45:48];
 
-    reg [26:0] counter;
+    wire [3:0] result = a + b;
 
-    always @(posedge clock or negedge reset_n)
-    begin
-        if (! reset_n)
-            counter <= 27'b0;
-        else
-            counter <= counter + 27'b1;
-    end
-    
-    wire [3:0] number = counter [26:23];
+    // a b c d e f g  dp   Буквы с картинки
+    // 7 6 4 2 1 9 10 5    Выводы 7-сегментного индикатора
+    // 7 6 5 4 3 2 1       Выводы сигнала pio в ПЛИС
 
     //   --a--
     //  |     |
@@ -38,7 +31,7 @@ module top
     reg  [6:0] abcdefg;
 
     always @*
-        case (number)
+        case (result)
         4'h0: abcdefg = 7'b1111110;
         4'h1: abcdefg = 7'b0110000;
         4'h2: abcdefg = 7'b1101101;
