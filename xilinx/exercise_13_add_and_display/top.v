@@ -9,8 +9,8 @@ module top
     inout  [48:1] pio   // GPIO, General-Purpose Input/Output
 );
 
-    wire [3:0] a = pio [41:44];
-    wire [3:0] b = pio [45:48];
+    wire [3:0] a = pio [14:11];
+    wire [3:0] b = pio [20:17];
 
     wire [3:0] result = a + b;
 
