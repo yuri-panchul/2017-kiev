@@ -89,7 +89,7 @@ module counter
         if (! reset_n)
             count <= 32'b0;
         else
-            count <= counter + 32'b1;
+            count <= count + 32'b1;
     end
 
 endmodule
