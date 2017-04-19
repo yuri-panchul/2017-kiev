@@ -25,7 +25,7 @@ module top_1
 
     reg [21:0] counter;
 
-    always @(posedge clock_12_mhz or negedge reset_n)
+    always @(posedge clock or negedge reset_n)
     begin
         if (! reset_n)
             counter <= 22'b0;
