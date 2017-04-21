@@ -106,4 +106,8 @@ module top
     assign RGB0_Green = ~ (note_e4 & button_e4);
     assign RGB0_Blue  = ~ (note_g4 & button_g4);
 
+    assign pio [46]   = note_c4;
+    assign pio [47]   = note_e4;
+    assign pio [48]   = note_g4;
+
 endmodule
