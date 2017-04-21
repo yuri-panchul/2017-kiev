@@ -7,8 +7,8 @@
 module frequency_generator
 #
 (
-    parameter clock_frequency,
-              output_frequency_mul_100
+    parameter clock_frequency          = 12000000,  // 12 MHz
+              output_frequency_mul_100 = 26163      // Частота ноты До   первой октавы * 100
 )
 (
     input      clock,
@@ -21,7 +21,7 @@ module frequency_generator
 
     reg [15:0] counter;
 
-    always @(posedge clock_12_mhz or negedge reset_n)
+    always @(posedge clock or negedge reset_n)
     begin
         if (! reset_n)
         begin
@@ -75,9 +75,9 @@ module top
         .output_frequency_mul_100 ( frequency_c4_mul_100 )
     )
     (
-        .clock   (   clock     ),
-        .reset_n ( ! button_c4 ),
-        .out     (   note_c4   )
+        .clock   ( clock     ),
+        .reset_n ( button_c4 ),
+        .out     ( note_c4   )
     );
 
     frequency_generator
@@ -86,9 +86,9 @@ module top
         .output_frequency_mul_100 ( frequency_e4_mul_100 )
     )
     (
-        .clock   (   clock     ),
-        .reset_n ( ! button_e4 ),
-        .out     (   note_e4   )
+        .clock   ( clock     ),
+        .reset_n ( button_e4 ),
+        .out     ( note_e4   )
     );
 
     frequency_generator
@@ -97,17 +97,15 @@ module top
         .output_frequency_mul_100 ( frequency_g4_mul_100 )
     )
     (
-        .clock   (   clock     ),
-        .reset_n ( ! button_g4 ),
-        .out     (   note_g4   )
+        .clock   ( clock     ),
+        .reset_n ( button_g4 ),
+        .out     ( note_g4   )
     );
 
     assign RGB0_Red   = ~ (note_c4 & button_c4);
     assign RGB0_Green = ~ (note_e4 & button_e4);
     assign RGB0_Blue  = ~ (note_g4 & button_g4);
 
-    assign pio [46]   = note_c4;
-    assign pio [47]   = note_e4;
-    assign pio [48]   = note_g4;
+    assign pio [48]   = note_c4 | note_e4 | note_g4;
 
 endmodule
