@@ -1,4 +1,8 @@
-
+//----------------------------------------------------------------------------
+//
+//  Упражнение 18.2: Генерация звуков До-Ми-Соль
+//
+//----------------------------------------------------------------------------
 
 module frequency_generator
 #
@@ -42,104 +46,64 @@ endmodule
 
 //----------------------------------------------------------------------------
 
-    parameter frequency_c_1_mul_100 = 26163,  // Частота ноты До   первой октавы * 100
-              frequency_e_1_mul_100 = 32963,  // Частота ноты Ми   первой октавы * 100
-              frequency_g_1_mul_100 = 39200;  // Частота ноты Соль первой октавы * 100
-    
-
-//----------------------------------------------------------------------------
-//
-//  Пример 12: Датчик освещения
-//
-//----------------------------------------------------------------------------
-
-module timer
-(
-    input  clock_12_mhz,
-    input  reset_n,
-    output strobe_with_period_0_35_second,
-    output strobe_1_of_of_16
-);
-
-    reg [21:0] counter;
-
-    always @(posedge clock_12_mhz or negedge reset_n)
-    begin
-        if (! reset_n)
-            counter <= 22'b0;
-        else
-            counter <= counter + 22'b1;
-    end
-    
-    assign strobe_with_period_0_35_second = (counter [21:0] == 22'b0); 
-    assign strobe_1_of_of_16              = (counter [ 3:0] ==  4'b0);
-
-endmodule
-
-//--------------------------------------------------------------------
-
-module cmod_a7_12
+module top
 (
     input         CLK,         // Тактовый сигнал 12 MHz
-
-    output [ 1:0] LED,         // Два светодиода
 
     output        RGB0_Red,    // Красная часть трехцветного светодиода
     output        RGB0_Green,  // Зеленая часть трехцветного светодиода
     output        RGB0_Blue,   // Синяя часть трехцветного светодиода
 
     input  [ 1:0] BTN,         // Две кнопки
-
-    inout  [ 7:0] ja,          // Pmod Header JA
     inout  [48:1] pio          // GPIO, General-Purpose Input/Output
 );
 
-    wire clock   = CLK;
-    wire reset_n = ! BTN [0];
-    wire button  = pio [9];
+    parameter clock_frequency      = 12000000;
 
-    wire shift_enable;
-    wire board_led_strobe;
+    parameter frequency_c4_mul_100 = 26163,  // Частота ноты До   первой октавы * 100
+              frequency_e4_mul_100 = 32963,  // Частота ноты Ми   первой октавы * 100
+              frequency_g4_mul_100 = 39200;  // Частота ноты Соль первой октавы * 100
+    
+    wire clock     = CLK;
+    wire button_c4 = BTN [1];
+    wire button_e4 = BTN [0];
+    wire button_g4 = pio [9];
 
-    timer timer_i
+    frequency_generator
+    # (
+        .clock_frequency          ( clock_frequency      ),
+        .output_frequency_mul_100 ( frequency_c4_mul_100 )
+    )
     (
-        .clock_12_mhz                   ( clock            ),
-        .reset_n                        ( reset_n          ),
-        .strobe_with_period_0_35_second ( shift_enable     ),
-        .strobe_1_of_of_16              ( board_led_strobe )
+        .clock   (   clock     ),
+        .reset_n ( ! button_c4 ),
+        .out     (   note_c4   )
     );
 
-    reg [7:0] shift;
-
-    always @(posedge clock or negedge reset_n)
-    begin
-        if (! reset_n)
-            shift <= 8'b0;
-        else if (shift_enable)
-            shift <= { button, shift [7:1] };
-    end
-
-    wire [15:0] value;
-
-    pmod_als_spi_receiver pmod_als_spi_receiver_i
+    frequency_generator
+    # (
+        .clock_frequency          ( clock_frequency      ),
+        .output_frequency_mul_100 ( frequency_e4_mul_100 )
+    )
     (
-        .clock    ( clock   ),
-        .reset_n  ( reset_n ),
-        .cs       ( ja [0]  ),
-        .sck      ( ja [3]  ),
-        .sdo      ( ja [2]  ),
-        .value    ( value   )
+        .clock   (   clock     ),
+        .reset_n ( ! button_e4 ),
+        .out     (   note_e4   )
     );
 
-    wire [7:0] level = ~ (~ 8'b0 >> value [12:9]);
+    frequency_generator
+    # (
+        .clock_frequency          ( clock_frequency      ),
+        .output_frequency_mul_100 ( frequency_g4_mul_100 )
+    )
+    (
+        .clock   (   clock     ),
+        .reset_n ( ! button_g4 ),
+        .out     (   note_g4   )
+    );
 
-    assign pio [8:1] = shift | level;
-
-    assign RGB0_Red   = ~ ((shift [7:4] != 4'b0) & board_led_strobe);
-    assign RGB0_Green = ~ ((shift [5:2] != 4'b0) & board_led_strobe);
-    assign RGB0_Blue  = ~ ((shift [3:0] != 4'b0) & board_led_strobe);
-
-    assign LED [0] = (ja != 8'b0) & board_led_strobe;
-    assign LED [1] = (pio [48:10] != 39'b0) & board_led_strobe;
+    assign RGB0_Red   = ~ (note_c4 & button_c4);
+    assign RGB0_Green = ~ (note_e4 & button_e4);
+    assign RGB0_Blue  = ~ (note_g4 & button_g4);
 
 endmodule
