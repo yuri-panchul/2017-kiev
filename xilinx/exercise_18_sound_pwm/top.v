@@ -1,38 +1,51 @@
-// TODO
 
-//----------------------------------------------------------------------------
-//
-//  Пример 1: Логические элементы И и ИЛИ
-//
-//----------------------------------------------------------------------------
 
-module top_1
+module frequency_generator
+#
 (
-    output [1:0] LED,  // Два светодиода
-    input  [1:0] BTN   // Две кнопки
+    parameter clock_frequency,
+              output_frequency_mul_100
+)
+(
+    input      clock,
+    input      reset_n,
+    output reg out
 );
 
-    assign LED [0] = BTN [0] & BTN [1];
-    assign LED [1] = BTN [0] | BTN [1];
-    
+    parameter [31:0] period_in_cycles
+        = clock_frequency * 100 / output_frequency_mul_100;
+
+    reg [15:0] counter;
+
+    always @(posedge clock_12_mhz or negedge reset_n)
+    begin
+        if (! reset_n)
+        begin
+            counter <= 16'b0;
+            out     <= 1'b0;
+        end
+        else
+        begin
+            if (counter == period_in_cycles / 2 - 1)
+            begin
+                out     <= ! out;
+                counter <= 16'b0;
+            end
+            else
+            begin
+                counter <= counter + 16'b1;
+            end
+        end
+    end
+
 endmodule
 
 //----------------------------------------------------------------------------
-//
-//  Пример 1: Логические элементы И и ИЛИ
-//
-//----------------------------------------------------------------------------
 
-module top_1
-(
-    output [1:0] LED,  // Два светодиода
-    input  [1:0] BTN   // Две кнопки
-);
-
-    assign LED [0] = BTN [0] & BTN [1];
-    assign LED [1] = BTN [0] | BTN [1];
+    parameter frequency_c_1_mul_100 = 26163,  // Частота ноты До   первой октавы * 100
+              frequency_e_1_mul_100 = 32963,  // Частота ноты Ми   первой октавы * 100
+              frequency_g_1_mul_100 = 39200;  // Частота ноты Соль первой октавы * 100
     
-endmodule
 
 //----------------------------------------------------------------------------
 //
